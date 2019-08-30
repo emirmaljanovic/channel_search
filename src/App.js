@@ -1,7 +1,8 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import './App.css';
 
 import List from './components/List';
+import Loader from './components/Loader';
 
 import { get } from './helpers/fetch';
 
@@ -11,29 +12,27 @@ class App extends Component {
     super(props);
 
     this.state = {
+      offset: 0,
       searchTerm: '',
       maxViewers: 1,
       maxChannels: 1,
       topChannel: {},
       directories: [],
+      dataSetLoading: true
     };
 
     this.onInputChange = this.onInputChange.bind(this);
+    this.fetchDirectories = this.fetchDirectories.bind(this);
   }
 
   componentWillMount() {
-    get({ url: 'https://api.twitch.tv/kraken/games/top?limit=100'})
-      .then(({ top, _total }) => {
-        const directories = top.sort((a, b) => a.channels < b.channels ? 0 : -1);
-        const [ topChannel ] = directories;
+    this.fetchDirectories();
+  }
 
-        this.setState({
-          directories,
-          topChannel,
-          maxChannels: topChannel.channels,
-          maxViewers: topChannel.viewers,
-        })
-      });
+  componentDidUpdate() {
+    if (this.state.offset <= 500) {
+      this.fetchDirectories();
+    }
   }
 
   onInputChange(event) {
@@ -50,6 +49,24 @@ class App extends Component {
     this.setState({ [key]: value });
   }
 
+  fetchDirectories() {
+    get({ url: `https://api.twitch.tv/kraken/games/top?limit=100&offset=${this.state.offset}`})
+      .then(({ top, _total }) => {
+        let directories = [...this.state.directories, ...top];
+        directories = directories.sort((a, b) => a.channels < b.channels ? 0 : -1);
+        const [ topChannel ] = directories;
+
+        this.setState({
+          directories,
+          topChannel,
+          offset: this.state.offset + 100,
+          maxChannels: topChannel.channels,
+          maxViewers: topChannel.viewers,
+          dataSetLoading: this.state.offset !== 500
+        })
+      });
+  }
+
   filterDirectories() {
     const { searchTerm, maxChannels, maxViewers } = this.state;
 
@@ -61,40 +78,46 @@ class App extends Component {
   }
 
   render() {
-    const { searchTerm, maxChannels, maxViewers } = this.state;
+    const { searchTerm, maxChannels, maxViewers, dataSetLoading } = this.state;
 
     return (
       <div className="App">
-        <section className="filters">
-          <div className="input-group">
-            <span>Search:</span>
-            <input
-              type="text"
-              name="searchTerm"
-              value={searchTerm}
-              onChange={this.onInputChange}
-            />
-          </div>
-          <div className="input-group">
-            <span>Max channels {maxChannels}</span>
-            <input
-              type="number"
-              name="maxChannels"
-              value={maxChannels}
-              onChange={this.onInputChange}
-            />
-          </div>
-          <div className="input-group">
-            <span>Max viewers</span>
-            <input
-              type="number"
-              name="maxViewers"
-              value={maxViewers}
-              onChange={this.onInputChange}
-            />
-          </div>
-        </section>
-        <List directories={this.filterDirectories()} />
+        { dataSetLoading ?
+          <Loader />
+          :
+          <Fragment>
+            <section className="filters">
+              <div className="input-group">
+                <span>Search:</span>
+                <input
+                  type="text"
+                  name="searchTerm"
+                  value={searchTerm}
+                  onChange={this.onInputChange}
+                />
+              </div>
+              <div className="input-group">
+                <span>Max channels {maxChannels}</span>
+                <input
+                  type="number"
+                  name="maxChannels"
+                  value={maxChannels}
+                  onChange={this.onInputChange}
+                />
+              </div>
+              <div className="input-group">
+                <span>Max viewers</span>
+                <input
+                  type="number"
+                  name="maxViewers"
+                  value={maxViewers}
+                  onChange={this.onInputChange}
+                />
+              </div>
+            </section>
+            <List directories={this.filterDirectories()} />
+          </Fragment>
+        }
       </div>
     );
   }
