@@ -1,10 +1,10 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import './App.css';
 
 import List from './components/List';
 import Loader from './components/Loader';
 
-import { get } from './helpers/fetch';
+import { get, debounce } from './helpers/fetch';
 
 class App extends Component {
 
@@ -12,112 +12,96 @@ class App extends Component {
     super(props);
 
     this.state = {
-      offset: 0,
+      _cursor: '',
+      clips: [],
       searchTerm: '',
-      maxViewers: 1,
-      maxChannels: 1,
-      topChannel: {},
-      directories: [],
-      dataSetLoading: true
+      period: 'all',
+      dataLoaded: false,
+      selectedChannel: '',
+      dataSetLoading: false
     };
 
     this.onInputChange = this.onInputChange.bind(this);
-    this.fetchDirectories = this.fetchDirectories.bind(this);
-  }
-
-  componentWillMount() {
-    this.fetchDirectories();
-  }
-
-  componentDidUpdate() {
-    if (this.state.offset <= 500) {
-      this.fetchDirectories();
-    }
+    this.fetchClips = debounce(this.fetchClips.bind(this), 500);
   }
 
   onInputChange(event) {
-    const { topChannel } = this.state;
-    const key = event.target.name;
     let value = event.target.value;
 
-    if (key === 'maxChannels' && value === '') {
-      value = topChannel.channels;
-    } else if (key === 'maxViewers' && value === '') {
-      value = topChannel.viewers;
-    }
-
-    this.setState({ [key]: value });
+    this.setState({ selectedChannel: value, _cursor: null, dataLoaded: false });
+    this.fetchClips();
   }
 
-  fetchDirectories() {
-    get({ url: `https://api.twitch.tv/kraken/games/top?limit=100&offset=${this.state.offset}`})
-      .then(({ top, _total }) => {
-        let directories = [...this.state.directories, ...top];
-        directories = directories.sort((a, b) => a.channels < b.channels ? 0 : -1);
-        const [ topChannel ] = directories;
+  fetchClips() {
+    const { selectedChannel, _cursor, period } = this.state;
+    this.setState({ dataSetLoading: true });
 
+    get({ url: `https://api.twitch.tv/kraken/clips/top?limit=50&cursor=${_cursor || ''}&channel=${selectedChannel}&period=${period}`})
+      .then(({ clips, _cursor }) => {
         this.setState({
-          directories,
-          topChannel,
-          offset: this.state.offset + 100,
-          maxChannels: topChannel.channels,
-          maxViewers: topChannel.viewers,
-          dataSetLoading: this.state.offset !== 500
+          _cursor,
+          dataLoaded: true,
+          dataSetLoading: false,
+          clips: this.state._cursor === null ? clips || [] : [...this.state.clips, ...clips]
         })
       });
   }
 
-  filterDirectories() {
-    const { searchTerm, maxChannels, maxViewers } = this.state;
+  filterClips() {
+    const { selectedChannel, clips } = this.state;
 
-    return this.state.directories.filter(({ channels, game: { name }, viewers }) => {
-      return channels <= maxChannels
-        && name.toLowerCase().includes(searchTerm.toLowerCase())
-        && viewers <= maxViewers;
-    });
+    return clips.filter(({ title }) =>  title.toLowerCase().includes(selectedChannel.toLowerCase()));
   }
 
   render() {
-    const { searchTerm, maxChannels, maxViewers, dataSetLoading } = this.state;
+    const {
+      clips,
+      dataLoaded,
+      selectedChannel,
+      dataSetLoading
+    } = this.state;
+
+    let content = null;
+
+    if (dataSetLoading && !dataLoaded) {
+      content = <Loader />;
+    } else if (clips.length) {
+      content = <List clips={clips} onLastReached={this.fetchClips} />;
+    } else if (!dataSetLoading && !clips.length && dataLoaded && selectedChannel !== '') {
+      content = (
+        <div className="no-data">
+          <span>No clips found for channel</span>
+        </div>
+      );
+    }
 
     return (
       <div className="App">
-        { dataSetLoading ?
-          <Loader />
-          :
-          <Fragment>
-            <section className="filters">
-              <div className="input-group">
-                <span>Search:</span>
-                <input
-                  type="text"
-                  name="searchTerm"
-                  value={searchTerm}
-                  onChange={this.onInputChange}
-                />
-              </div>
-              <div className="input-group">
-                <span>Max channels {maxChannels}</span>
-                <input
-                  type="number"
-                  name="maxChannels"
-                  value={maxChannels}
-                  onChange={this.onInputChange}
-                />
-              </div>
-              <div className="input-group">
-                <span>Max viewers</span>
-                <input
-                  type="number"
-                  name="maxViewers"
-                  value={maxViewers}
-                  onChange={this.onInputChange}
-                />
-              </div>
-            </section>
-            <List directories={this.filterDirectories()} />
-          </Fragment>
-        }
+        <header className="header">
+          <h1>TW Clip Downloader</h1>
+          <small>(Don't lose your content)</small>
+        </header>
+        <section className="filters">
+          <input
+            type="text"
+            value={selectedChannel}
+            name="selectedChannel"
+            className="channel-search"
+            onChange={this.onInputChange}
+            placeholder="Search for a channel..."
+          />
+          { dataLoaded && clips.length ?
+            <button
+              disabled={true}
+              className="download-button"
+              onClick={this.bulkDownload}
+            >
+              Download all clips from this channel
+            </button>
+            : null
+          }
+        </section>
+        {content}
       </div>
     );
   }

@@ -1,22 +1,51 @@
 import React from 'react';
 
-const ListItem = ({ game: { name, box: { small } }, channelsNumber, viewers }) =>
-  <li className="channel-item">
-    <a
-      className="App-link"
-      href={`https://twitch.tv/directory/game/${name}`}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <div className="channel-logo">
-        <img src={small} alt="logo" />
-      </div>
-      <div className="content">
-        <span className="channel-name" title={name}>{name}</span>
-        <span className="channel-game" title={channelsNumber}>Channels: {channelsNumber}</span>
-        <span className="channel-game" title={viewers}>Viewers: {viewers}</span>
-      </div>
-    </a>
+const ListItem = ({ title, url, views, game, createdAt, curator, thumbnail }) =>
+  <li className="list-item">
+    <img className="clip-logo" src={thumbnail} alt="logo" />
+    <div className="item-part">
+      <span className="item-big-text" title={title}>
+        {title}
+      </span>
+      <span className="item-dim-text" title={views}>Views: {views}</span>
+      <span className="item-dim-text" title={game}>
+        Category: {game}
+      </span>
+    </div>
+    <div className="item-part">
+      <span className="item-dim-text" title={title}>
+        Curator: {curator.display_name}
+      </span>
+      <a
+        target="_blank"
+        className="item-dim-text"
+        href={curator.channel_url}
+        rel="noopener noreferrer"
+      >
+        Open curator channel
+      </a>
+      <span className="item-dim-text" title={createdAt}>
+        Created at: {createdAt}
+      </span>
+    </div>
+    <div className="item-part">
+      <a
+        href={`${thumbnail.split('-preview')[0]}.mp4`}
+        target="_blank"
+        rel="noopener noreferrer"
+        download
+      >
+        Download video
+      </a>
+      <span></span>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Open video
+      </a>
+    </div>
   </li>;
 
 export default ListItem;

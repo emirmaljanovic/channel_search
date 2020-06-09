@@ -1,67 +1,133 @@
+#root {
+  background-color: #282c34;
+}
+
 .App {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 60px 60px 1fr;
+  grid-template-areas:
+    "header"
+    "filters"
+    "body"
+  ;
+  justify-content: center;
   align-items: center;
   
   height: 100vh;
   overflow: hidden;
-  
-  background-color: #282c34;
-  
+  padding: 20px 0 20px 20px;  
   color: white;
   font-size: calc(10px + 2vmin);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
-  padding: 20px 0px 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
+.header {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  text-transform: uppercase;
+  padding: 20px 0;
+}
+
+.header h1 {
+  line-height: 1.2;
+  text-shadow: 0px 0px 8px #000;
+}
+.header small {
+  font-size: 8px;
+  letter-spacing: 2px;
+}
+
+.search-wrapper {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  grid-area: body;
+}
+
+.channel-search {
+  width: 500px;
+}
+
+.no-data {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  align-items: center;
+
+  padding: 5px;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: rgb(255, 69, 69);
 }
 
 .filters {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 2fr 1fr;
   grid-column-gap: 20px;
+  padding-right: 20px;
+  grid-area: filters;
 }
 
-.input-group {
-  display: flex;
-  flex-flow: column;
-}
-
-.input-group span {
-  font-size: 14px;
-  color: #ffffff5e;
-  text-transform: uppercase;
-}
-
-.input-group input {
+input {
   border: none;
   outline: none;
   background: transparent;
   border-bottom: 1px solid #FFF;
 
   color: #FFF;
-
-  padding: 5px 0px;
+  padding: 5px 0;
   line-height: 20px;
   font-size: 20px;
 }
 
-.input-group small {
-  color: #ffffff5e;
+.download-button {
+  outline: none;
+  border: none;
+  color: #fff;
+  background-color: transparent;
   font-size: 12px;
+  text-transform: uppercase;
+  padding: 5px;
+  flex: 1;
+  cursor: pointer;
+  border: 1px solid #fff;
+  border-radius: 3px;
 }
 
+.download-button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+/* List */
 .list-wrapper {
   max-height: 100%;
   overflow-y: auto;
 }
 
-.channel-list {
+.list-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.list-wrapper::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+}
+
+.list-wrapper::-webkit-scrollbar-thumb {
+  background-color: darkgrey;
+  outline: 1px solid slategrey;
+  border-radius: 3px;
+}
+
+.list {
   display: flex;
   flex-flow: row wrap;
   justify-content: flex-start;
@@ -72,67 +138,63 @@
   margin-top: 20px;
 }
 
-.channel-item {
-  width: 250px;
-
-  cursor: pointer;
-
+/* List item */
+.list-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 2fr 1fr;
+  grid-template-areas:
+    "logo titleCount download"
+  ;
+  grid-gap: 20px;
+  width: 100%;
   padding: 10px;
-  border-radius: 20px;
-
-  transition: all 100ms ease-in-out;
+  border-radius: 10px;
 }
 
-.channel-item a {
+.item-part {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, 1fr);
+  align-items: flex-end;
+}
+
+.list-item a {
   display: flex;
   flex-flow: row;
   justify-content: flex-start;
   align-items: center;
   
-  text-decoration: none;
+  text-decoration: underline;
   color: #FFF;
+  font-size: 14px;
+  text-transform: uppercase;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-.channel-item:hover {
+.list-item:hover {
   background-color: #3a404a;
 }
 
-.channel-logo {
-  margin-right: 20px;
-}
-
-.channel-logo img {
+.clip-logo {
   width: 60px;
   height: 60px;
 
   border-radius: 20px;
 }
 
-.channel-item .content {
-  display: flex;
-  flex-flow: column;
-
-  overflow: hidden;
-}
-
-.channel-item .content span {
+.list-item span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.channel-game {
+.item-dim-text, a.item-dim-text {
   font-size: .8rem;
   opacity: .5;
 }
 
-.channel-name {
+.item-big-text {
   text-transform: uppercase;
-  font-size: 1rem;
+  font-size: .9rem;
   line-height: 1.3;
 }
 
@@ -167,7 +229,7 @@
   .App {
     padding: 20px;
   }
-  .channel-list {
+  .list {
     justify-content: center;
   }
 }
